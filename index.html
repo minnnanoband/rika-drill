@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="理科">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1F6260">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>理科ドリル</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: one-column phone app shell — subject-colour header band, white sheets, accent for progress; bottom tab bar */
+:root{
+  --bg:#EEF1F0; --sheet:#FBFCFB; --ink:#1B2230; --sub:#5A6474; --line:#D6DCDA;
+  --ai:#1F6260; --ai-soft:#D6EBE9; --kin:#B7791F; --kin-soft:#F5E6CC;
+  --ok:#2F7A55; --ok-soft:#DCEFE4; --ng:#A8343B; --ng-soft:#F6DEDF;
+  --onai:#F7F5EE;
+  --mincho:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --goth:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1420; --sheet:#162031; --ink:#E5E8EE; --sub:#9AA5B6; --line:#2A3850;
+  --ai:#8FD3CE; --ai-soft:#183634; --kin:#EDB45A; --kin-soft:#3A2E1C;
+  --ok:#6CC69A; --ok-soft:#173527; --ng:#EE8A8F; --ng-soft:#3E1F24; --onai:#0E1420; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1420; --sheet:#162031; --ink:#E5E8EE; --sub:#9AA5B6; --line:#2A3850;
+  --ai:#8FD3CE; --ai-soft:#183634; --kin:#EDB45A; --kin-soft:#3A2E1C;
+  --ok:#6CC69A; --ok-soft:#173527; --ng:#EE8A8F; --ng-soft:#3E1F24; --onai:#0E1420; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--goth);font-size:16px;line-height:1.7;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ai)}
+button{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ai);color:var(--onai)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:10px;padding-bottom:10px}
+.brand{font-family:var(--mincho);font-weight:800;font-size:1.3rem;letter-spacing:.08em}
+.brand small{font-family:var(--goth);font-weight:500;font-size:.7rem;letter-spacing:.05em;opacity:.8;margin-left:6px}
+header.top .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-top:0;padding-bottom:10px}
+.grades button{border:1px solid rgba(128,128,128,.55);background:transparent;color:var(--onai);border-radius:999px;padding:3px 0;font-weight:700;font-size:.85rem;cursor:pointer}
+.grades button[aria-pressed="true"]{background:var(--onai);color:var(--ai);border-color:var(--onai)}
+.streak{font-size:.8rem;font-weight:700;background:rgba(128,128,128,.22);padding:3px 10px;border-radius:999px;white-space:nowrap}
+main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+main .wrap{padding-top:18px;padding-bottom:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+h2{font-family:var(--mincho);font-weight:700;font-size:1.15rem;margin:0;letter-spacing:.04em}
+.eyebrow{font-size:.72rem;letter-spacing:.14em;color:var(--sub);font-weight:700}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:16px}
+.today{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.ring{width:84px;height:84px}
+.ring circle{fill:none;stroke-width:9}
+.ring .bgc{stroke:var(--line)} .ring .fg{stroke:var(--kin);stroke-linecap:round;transition:stroke-dashoffset .6s}
+.ring text{fill:var(--ink);font-family:var(--mincho);font-weight:800;font-size:22px}
+.stats{display:grid;gap:4px;min-width:0}
+.stats b{font-variant-numeric:tabular-nums}
+.big-btn{display:block;width:100%;border:0;border-radius:12px;background:var(--ai);color:var(--onai);padding:15px 16px;font-weight:700;font-size:1.05rem;cursor:pointer;text-align:left}
+.big-btn span{display:block;font-weight:500;font-size:.8rem;opacity:.85}
+.row-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sub-btn{border:1px solid var(--line);background:var(--sheet);border-radius:12px;padding:11px;font-weight:700;cursor:pointer}
+.group-title{display:flex;align-items:baseline}
+.group-title .kan{font-family:var(--mincho);font-size:1.5rem;font-weight:800;color:var(--ai);line-height:1;margin-right:10px}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{border:1px solid var(--line);background:var(--sheet);border-radius:12px;padding:12px;text-align:left;cursor:pointer;display:grid;gap:6px;min-width:0}
+.cat .nm{font-weight:700;font-size:.95rem}
+.cat .meta{font-size:.72rem;color:var(--sub);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--kin);border-radius:999px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--sheet);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabs button{border:0;background:none;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;font-size:.72rem;color:var(--sub);cursor:pointer}
+nav.tabs button .g{font-family:var(--mincho);font-size:1.25rem;font-weight:800;line-height:1.3}
+nav.tabs button[aria-current="page"]{color:var(--ai)}
+nav.tabs button[aria-current="page"] .g{color:var(--kin)}
+details.lesson{background:var(--sheet);border:1px solid var(--line);border-radius:12px}
+details.lesson summary{list-style:none;cursor:pointer;padding:13px 16px;font-weight:700;display:flex;justify-content:space-between}
+details.lesson summary::-webkit-details-marker{display:none}
+details.lesson summary::after{content:"＋";color:var(--kin)}
+details.lesson[open] summary::after{content:"－"}
+.gchip{font-size:.7rem;font-weight:700;color:var(--kin);margin-left:auto;margin-right:8px;white-space:nowrap}
+.lesson .body{padding:0 16px 16px;font-size:.93rem}
+.lesson .body p{margin:.4em 0}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;width:100%;font-size:.88rem}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
+.tbl th{color:var(--sub);font-weight:700;font-size:.78rem;white-space:nowrap}
+.key{background:var(--kin-soft);padding:0 4px;border-radius:4px}
+.formula{font-family:"Times New Roman",var(--mincho);font-size:1.05rem}
+#quiz{position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.qhead{display:flex;align-items:center;padding-top:12px;padding-bottom:12px}
+.qhead .x{border:0;background:none;font-size:1.4rem;cursor:pointer;color:var(--sub);padding:0 10px 0 4px}
+.qhead .bar{flex:1;height:8px}
+.qhead .cnt{font-size:.8rem;color:var(--sub);font-variant-numeric:tabular-nums;margin-left:10px}
+.qcat{font-size:.75rem;font-weight:700;color:var(--kin);letter-spacing:.1em}
+.qtext{font-size:1.12rem;font-weight:500;margin:.3em 0 .8em}
+.qtext .big{font-family:"Times New Roman",var(--mincho);font-weight:700;font-size:1.7rem;display:block;margin:.3em 0;color:var(--ai);line-height:1.4}
+.qtext .quote{display:block;background:var(--sheet);border-left:3px solid var(--kin);padding:8px 12px;margin:.5em 0;border-radius:0 8px 8px 0}
+.choices{display:grid;gap:10px}
+.ch{border:1.5px solid var(--line);background:var(--sheet);border-radius:12px;padding:13px 14px;text-align:left;cursor:pointer;font-size:1.05rem;display:flex;align-items:flex-start}
+.ch .lb{font-family:var(--mincho);font-weight:800;color:var(--sub);min-width:1.6em}
+.ch.ok{border-color:var(--ok);background:var(--ok-soft)}
+.ch.ng{border-color:var(--ng);background:var(--ng-soft)}
+.ch[disabled]{cursor:default}
+.fb{margin-top:14px;border-radius:12px;padding:14px;font-size:.95rem}
+.fb.ok{background:var(--ok-soft)} .fb.ng{background:var(--ng-soft)}
+.fb .v{font-weight:800;font-size:1.05rem;margin-bottom:4px}
+.fb.ok .v{color:var(--ok)} .fb.ng .v{color:var(--ng)}
+.next{margin-top:14px}
+.result{text-align:center;display:grid;gap:14px;padding-top:24px;padding-bottom:24px}
+.result .score{font-family:var(--mincho);font-size:3.4rem;font-weight:800;color:var(--ai);line-height:1}
+.result ul{text-align:left;margin:0;padding-left:1.2em;font-size:.9rem}
+.decks{display:flex;overflow-x:auto;padding-bottom:4px}
+.deck{border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:6px 14px;font-weight:700;font-size:.85rem;white-space:nowrap;cursor:pointer;margin-right:8px}
+.deck[aria-pressed="true"]{background:var(--ai);color:var(--onai);border-color:var(--ai)}
+.flash{min-height:260px;border-radius:16px;background:var(--sheet);border:1px solid var(--line);display:grid;justify-items:center;align-content:center;text-align:center;padding:24px 18px;cursor:pointer;gap:10px}
+.flash .front{font-family:var(--mincho);font-weight:800;font-size:1.9rem;color:var(--ai);line-height:1.4}
+.flash .front.long{font-size:1.2rem;font-weight:700}
+.flash .back .mean{font-weight:700;font-size:1.15rem}
+.flash .back .ex{color:var(--sub);font-size:.92rem;margin-top:6px}
+.flash .hint{font-size:.75rem;color:var(--sub)}
+.cardbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cardbtns .sub-btn.good{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.cardbtns .sub-btn.again{background:var(--ng-soft);border-color:var(--ng);color:var(--ng)}
+.toggle{display:flex;align-items:center;font-size:.85rem;color:var(--sub)}
+.toggle input{margin-right:6px}
+.weak ul{list-style:none;margin:0;padding:0}
+.weak li{padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.weak .w{color:var(--ng);font-weight:700;font-size:.8rem;white-space:nowrap;margin-left:10px}
+.empty{color:var(--sub);text-align:center;padding:20px 0;font-size:.9rem}
+.note{font-size:.78rem;color:var(--sub)}
+.confirm{display:flex;flex-wrap:wrap;align-items:center}
+.confirm>*{margin-right:8px}
+svg.fig{display:block;margin:6px auto;max-width:100%}
+@media (min-width:740px){
+  .wrap,nav.tabs .in{max-width:820px}
+  body{font-size:17px}
+  .cats{grid-template-columns:repeat(4,1fr)}
+  #quiz .wrap{max-width:680px}
+  .flash{min-height:340px}.flash .front{font-size:2.4rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">理科ドリル<small>中学</small></div>
+  <div class="streak" id="streak">連続 0日</div>
+</div>
+<div class="wrap grades" role="group" aria-label="学年を選ぶ">
+  <button data-g="1">中1</button><button data-g="2">中2</button><button data-g="3">中3</button><button data-g="0">全学年</button>
+</div></header>
+<main>
+  <section id="v-home" class="wrap"></section>
+  <section id="v-learn" class="wrap" hidden></section>
+  <section id="v-cards" class="wrap" hidden></section>
+  <section id="v-weak" class="wrap" hidden></section>
+</main>
+<nav class="tabs" aria-label="メニュー"><div class="in">
+  <button data-v="home" aria-current="page"><span class="g">今</span>今日</button>
+  <button data-v="learn"><span class="g">要</span>要点</button>
+  <button data-v="cards"><span class="g">札</span>暗記カード</button>
+  <button data-v="weak"><span class="g">苦</span>苦手・記録</button>
+</div></nav>
+<div id="quiz" hidden></div>
+<div id="errbox" hidden style="position:fixed;left:8px;right:8px;bottom:90px;z-index:99;background:#A8343B;color:#fff;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.5"></div>
+<script>
+var APP_VER="2026-11-08.1730";
+window.onerror=function(msg,src,line){var b=document.getElementById("errbox");if(!b)return;b.hidden=false;
+  b.textContent="エラーが起きました（この画面を写真に撮って送ってください）："+msg+" ／ "+line+"行 ／ 版 "+APP_VER;};
+</script>
+<script>
+/* ===== 共通ヘルパー ===== */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;const t=a[i];a[i]=a[j];a[j]=t}return a};
+const pick=(pool,correct,n)=>shuffle(Array.from(new Set(pool)).filter(x=>x!==correct)).slice(0,n||3);
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const nz=(a,b)=>{let v=0;while(v===0)v=ri(a,b);return v};
+const choose=a=>a[Math.floor(Math.random()*a.length)];
+const Q=[],DECKS={},LESSONS=[];
+/* 静的問題：[問題, 正解, 誤答, 誤答, 誤答, 解説] */
+function mc(cat,id,label,prompt,correct,wrong,explain,gr){Q.push({type:"mc",cat:cat,id:id,label:label,prompt:prompt,correct:String(correct),wrong:wrong.map(String),explain:explain||"",gr:+gr})}
+function addList(cat,gr,list){list.forEach((r,i)=>{const lab=String(r[0]).replace(/<[^>]+>/g,"");mc(cat,cat+"-"+gr+"-"+i,lab.length>26?lab.slice(0,26)+"…":lab,r[0],r[1],[r[2],r[3],r[4]],r[5],gr)})}
+/* 自動生成問題：fn() → [問題HTML, 正解, 誤答候補[], 解説] 。n個の枠で記録 */
+function gen(cat,id,label,gr,fn,n){for(let k=0;k<(n||4);k++)Q.push({type:"gen",cat:cat,id:id+"-"+k,label:label,gr:+gr,fn:fn})}
+function fillWrong(correct,cands,filler){const out=[];const seen={};seen[correct]=1;
+  cands.forEach(c=>{c=String(c);if(c&&!seen[c]&&out.length<3){seen[c]=1;out.push(c)}});
+  let g=0;while(out.length<3&&g<60){const c=String(filler(g++));if(!seen[c]){seen[c]=1;out.push(c)}}
+  return out}
+</script>
+<script>
+/* ===== 理科ドリル データ ===== */
+const APP={key:"rika-drill-v1",gdesc:["中1〜中3のすべての範囲","植物・動物の分類・身のまわりの物質・光と音と力・大地の変化","化学変化と原子分子・生物のからだ・電流と磁界・天気とその変化","化学変化とイオン・生命の連続・運動とエネルギー・地球と宇宙・自然と人間"]};
+const GROUPS=[{k:"物",nm:"物理"},{k:"化",nm:"化学"},{k:"生",nm:"生物"},{k:"地",nm:"地学"}];
+const CATS=[
+{id:"hikari",g:"物",nm:"光・音・力"},{id:"denki",g:"物",nm:"電流と磁界"},{id:"undo",g:"物",nm:"運動とエネルギー"},{id:"keisan",g:"物",nm:"計算問題"},
+{id:"busshitsu",g:"化",nm:"身のまわりの物質"},{id:"kagaku",g:"化",nm:"化学変化と原子・分子"},{id:"kigo",g:"化",nm:"元素記号・化学式"},{id:"ion",g:"化",nm:"化学変化とイオン"},
+{id:"shokubutsu",g:"生",nm:"植物"},{id:"dobutsu",g:"生",nm:"動物・生物のからだ"},{id:"iden",g:"生",nm:"生命の連続・自然と人間"},
+{id:"daichi",g:"地",nm:"大地の変化"},{id:"tenki",g:"地",nm:"天気とその変化"},{id:"uchu",g:"地",nm:"地球と宇宙"}
+];
+const r1=x=>Math.round(x*10)/10;
+
+/* ---------- 計算（自動生成） ---------- */
+gen("keisan","ks-dens","密度",1,()=>{const d=choose([0.8,1.0,2.7,7.9,8.9,11.3,19.3]),v=ri(2,10),m=r1(d*v);
+  return [`体積 ${v} cm³、質量 ${m} g の物質の密度は？`,`${d} g/cm³`,[`${r1(v/m)} g/cm³`,`${r1(m*v)} g/cm³`,`${r1(d+1)} g/cm³`],`密度 = 質量 ÷ 体積 = ${m} ÷ ${v}。${d===2.7?"アルミニウム":d===7.9?"鉄":d===8.9?"銅":d===19.3?"金":d===11.3?"鉛":d===1.0?"水":"エタノール"}の密度。`,g=>`${r1(d+0.3*(g+2))} g/cm³`]});
+gen("keisan","ks-conc","質量パーセント濃度",1,()=>{const s=choose([5,10,20,25,30,40]),w=choose([45,80,95,100,150,160,175]),tot=s+w,ans=r1(s/tot*100);
+  return [`水 ${w} g に食塩 ${s} g をとかした食塩水の質量パーセント濃度は？（小数第2位を四捨五入）`,`${ans} %`,[`${r1(s/w*100)} %`,`${r1(w/tot*100)} %`,`${s} %`],`濃度 = 溶質 ÷ 溶液（溶質＋溶媒）× 100 = ${s} ÷ ${tot} × 100`,g=>`${r1(ans+g+1)} %`]});
+gen("keisan","ks-pres","圧力",1,()=>{const N=choose([10,20,30,40,60,80,100,120]),a=choose([0.01,0.02,0.04,0.05,0.1,0.2]),ans=Math.round(N/a);
+  return [`${N} N の力が ${a} m² の面に垂直にはたらくときの圧力は？`,`${ans} Pa`,[`${r1(N*a)} Pa`,`${Math.round(ans/10)} Pa`,`${ans*10} Pa`],`圧力(Pa) = 力(N) ÷ 面積(m²) = ${N} ÷ ${a}`,g=>`${ans+50*(g+1)} Pa`]});
+gen("keisan","ks-hooke","ばねののび",1,()=>{const k=choose([1,2,3,4,5]),f1=choose([0.2,0.3,0.4,0.5]),f2=choose([0.6,0.8,1.0,1.2]);const l1=r1(k*f1*10),l2=r1(k*f2*10);
+  return [`ばねに ${f1} N の力を加えると ${l1} cm のびた。${f2} N の力を加えると何 cm のびる？`,`${l2} cm`,[`${r1(l1+f2)} cm`,`${r1(l2/2)} cm`,`${r1(l2*2)} cm`],`ばねののびは力の大きさに比例する（フックの法則）。${l1} × ${f2}/${f1}`,g=>`${r1(l2+g+1)} cm`]});
+gen("keisan","ks-sound","音の速さ",1,()=>{const t=choose([1.5,2,2.5,3,4,5]),d=Math.round(340*t);
+  return [`花火が見えてから ${t} 秒後に音が聞こえた。音の速さを 340 m/s とすると、花火までの距離は？`,`${d} m`,[`${Math.round(340/t)} m`,`${Math.round(d/2)} m`,`${d*2} m`],`距離 = 速さ × 時間 = 340 × ${t}。光はほぼ一瞬でとどく。`,g=>`${d+100*(g+1)} m`]});
+gen("keisan","ks-ohm","オームの法則",2,()=>{const t=ri(0,2),R=choose([2,4,5,10,20,25,30]),I=choose([0.1,0.2,0.3,0.4,0.5,1.5,2]),V=r1(R*I);
+  if(t===0)return [`${R} Ω の抵抗に ${I} A の電流が流れるとき、抵抗に加わる電圧は？`,`${V} V`,[`${r1(R/I)} V`,`${r1(I/R)} V`,`${r1(R+I)} V`],`V = R × I = ${R} × ${I}`,g=>`${r1(V+g+1)} V`];
+  if(t===1)return [`${V} V の電圧を加えると ${I} A の電流が流れる抵抗の大きさは？`,`${R} Ω`,[`${R*10} Ω`,`${r1(R/2)} Ω`,`${R*2} Ω`],`R = V ÷ I = ${V} ÷ ${I}`,g=>`${R+g+3} Ω`];
+  return [`${R} Ω の抵抗に ${V} V の電圧を加えたとき流れる電流は？`,`${I} A`,[`${r1(V*R)} A`,`${r1(R/V)} A`,`${r1(I*10)} A`],`I = V ÷ R = ${V} ÷ ${R}`,g=>`${r1(I+0.1*(g+2))} A`]});
+gen("keisan","ks-series","直列・並列の合成抵抗",2,()=>{const a=choose([2,3,4,6,10,12]),b=choose([3,6,12,4,15,20]);const t=ri(0,1);
+  if(t===0)return [`${a} Ω と ${b} Ω の抵抗を<b>直列</b>につないだときの全体の抵抗は？`,`${a+b} Ω`,[`${r1(a*b/(a+b))} Ω`,`${Math.abs(a-b)||1} Ω`,`${a*b} Ω`],`直列：R = R₁ + R₂`,g=>`${a+b+g+1} Ω`];
+  return [`${a} Ω と ${b} Ω の抵抗を<b>並列</b>につないだときの全体の抵抗は？（小数第2位を四捨五入）`,`${r1(a*b/(a+b))} Ω`,[`${a+b} Ω`,`${r1((a+b)/2)} Ω`,`${a*b} Ω`],`並列：1/R = 1/R₁ + 1/R₂。全体の抵抗はどちらの抵抗よりも小さくなる。`,g=>`${r1(a*b/(a+b)+g+1)} Ω`]});
+gen("keisan","ks-power","電力・電力量・熱量",2,()=>{const t=ri(0,1),V=100,W=choose([100,200,400,600,800,1000,1200]);
+  if(t===0)return [`100 V で使うと ${W/V} A の電流が流れる電気器具の電力は？`,`${W} W`,[`${W/V/V} W`,`${W/10} W`,`${V+W/V} W`],`電力(W) = 電圧(V) × 電流(A) = 100 × ${W/V}`,g=>`${W+100*(g+1)} W`];
+  const s=choose([60,120,180,300]);return [`${W} W の電熱線に ${s} 秒間電流を流したときに発生する熱量は？`,`${W*s} J`,[`${W/s} J`,`${W*s/60} J`,`${W+s} J`],`熱量(J) = 電力(W) × 時間(s) = ${W} × ${s}`,g=>`${W*s+1000*(g+1)} J`]});
+gen("keisan","ks-oxid","化学変化と質量の比",2,()=>{const t=ri(0,1);
+  if(t===0){const cu=choose([0.4,0.8,1.2,1.6,2.0,2.4]);return [`銅と酸素は 4 : 1 の質量の比で結びつく。銅 ${cu} g を完全に酸化させると、酸化銅は何 g できる？`,`${r1(cu*1.25)} g`,[`${r1(cu*0.25)} g`,`${r1(cu*0.8)} g`,`${r1(cu*5)} g`],`結びつく酸素は ${cu} × 1/4 = ${r1(cu/4)} g。酸化銅 = ${cu} + ${r1(cu/4)}`,g=>`${r1(cu*1.25+0.2*(g+1))} g`]}
+  const mg=choose([0.3,0.6,0.9,1.2,1.5,1.8]);return [`マグネシウムと酸素は 3 : 2 の質量の比で結びつく。マグネシウム ${mg} g を完全に燃焼させると、酸化マグネシウムは何 g できる？`,`${r1(mg*5/3)} g`,[`${r1(mg*2/3)} g`,`${r1(mg*1.5)} g`,`${r1(mg*2.5)} g`],`結びつく酸素は ${mg} × 2/3 = ${r1(mg*2/3)} g`,g=>`${r1(mg*5/3+0.2*(g+1))} g`]});
+const SAT={0:4.8,5:6.8,10:9.4,15:12.8,20:17.3,25:23.1,30:30.4};
+gen("keisan","ks-hum","湿度・露点",2,()=>{const T=choose([20,25,30]),lows=[0,5,10,15,20,25].filter(x=>x<T),dp=choose(lows),v=SAT[dp],ans=Math.round(v/SAT[T]*100);const t=ri(0,1);
+  const tbl=`<span class="note">飽和水蒸気量（g/m³）：${Object.keys(SAT).map(k=>k+"℃ "+SAT[k]).join("、")}</span>`;
+  if(t===0)return [`気温 ${T}℃ の空気 1 m³ に水蒸気が ${v} g ふくまれているときの湿度は？（整数で）<br>${tbl}`,`${ans} %`,[`${Math.round(SAT[T]/v*10)} %`,`${100-ans} %`,`${Math.round(v)} %`],`湿度 = 水蒸気量 ÷ 飽和水蒸気量 × 100 = ${v} ÷ ${SAT[T]} × 100`,g=>`${ans+5*(g+1)} %`];
+  return [`気温 ${T}℃ の空気 1 m³ に水蒸気が ${v} g ふくまれている。この空気の露点は？<br>${tbl}`,`${dp}℃`,[`${T}℃`,`${T-dp}℃`,`${dp+5}℃`],`ふくまれる水蒸気量が飽和水蒸気量と等しくなる温度が露点。`,g=>`${dp+5*(g+2)}℃`]});
+gen("keisan","ks-quake","地震の計算",1,()=>{const vp=choose([6,7,8]),vs=choose([3,4]),D=vp*vs*ri(2,6);const tp=r1(D/vp),ts=r1(D/vs),pz=r1(ts-tp);
+  return [`P波の速さ ${vp} km/s、S波の速さ ${vs} km/s のとき、震源から ${D} km の地点の初期微動継続時間は？`,`${pz} 秒`,[`${tp} 秒`,`${ts} 秒`,`${r1(pz*2)} 秒`],`P波の到着 ${tp} 秒後、S波の到着 ${ts} 秒後。その差が初期微動継続時間。震源からの距離に比例する。`,g=>`${r1(pz+g+1)} 秒`]});
+gen("keisan","ks-speed","速さ・仕事",3,()=>{const t=ri(0,2);
+  if(t===0){const d=choose([30,45,60,90,120]),s=choose([2,3,5,6]);return [`台車が ${s} 秒間に ${d} cm 進んだ。平均の速さは？`,`${r1(d/s)} cm/s`,[`${d*s} cm/s`,`${r1(d/s+5)} cm/s`,`${r1(d/s/2)} cm/s`],`速さ = 移動距離 ÷ 時間`,g=>`${r1(d/s+g+1)} cm/s`]}
+  if(t===1){const kg=choose([0.5,1,2,3,5]),m=choose([0.5,1,1.5,2]),N=kg*10;return [`質量 ${kg} kg の物体を ${m} m 持ち上げる仕事は？（100 g の物体にはたらく重力を 1 N とする）`,`${r1(N*m)} J`,[`${r1(kg*m)} J`,`${r1(N/m)} J`,`${r1(N*m*10)} J`],`仕事(J) = 力(N) × 力の向きに動いた距離(m) = ${N} × ${m}`,g=>`${r1(N*m+g+1)} J`]}
+  const J=choose([60,120,300,600]),s=choose([5,10,20,30]);return [`${J} J の仕事を ${s} 秒間で行ったときの仕事率は？`,`${r1(J/s)} W`,[`${J*s} W`,`${r1(s/J)} W`,`${r1(J/s*2)} W`],`仕事率(W) = 仕事(J) ÷ 時間(s)`,g=>`${r1(J/s+g+1)} W`]});
+gen("keisan","ks-nanchu","太陽の南中高度",3,()=>{const lat=choose([33,34,35,36,38,40,43]),t=ri(0,2),names=["春分・秋分","夏至","冬至"],h=[90-lat,r1(90-lat+23.4),r1(90-lat-23.4)][t];
+  return [`北緯 ${lat}° の地点での${names[t]}の日の太陽の南中高度は？（地軸の傾きは 23.4°）`,`${h}°`,[`${[r1(90-lat+23.4),90-lat,r1(90-lat+23.4)][t]===h?r1(h+10):[r1(90-lat+23.4),90-lat,r1(90-lat+23.4)][t]}°`,`${lat}°`,`${r1(90-lat-23.4)===h?90-lat:r1(90-lat-23.4)}°`],`春分・秋分 90° − 緯度、夏至 90° −（緯度 − 23.4°）、冬至 90° −（緯度 + 23.4°）`,g=>`${r1(h+3*(g+1))}°`]});
+
+/* ---------- 物理 ---------- */
+addList("hikari",1,[
+["光が鏡で反射するとき、入射角と反射角の関係は？","等しい","入射角が大きい","反射角が大きい","たすと90°","反射の法則。"],
+["光が空気中から水中へ進むとき、屈折角は入射角に比べてどうなる？","小さくなる","大きくなる","等しい","0°になる","水中から空気中へ進むときは屈折角の方が大きい。"],
+["水中から空気中へ進む光が、境界面ですべて反射する現象は？","全反射","乱反射","屈折","分散","光ファイバーに利用される。"],
+["物体を凸レンズの焦点の内側に置いたとき、レンズを通して見える像は？","虚像（正立・大きい）","実像（倒立）","像はできない","実像（正立）","焦点の外側に置くと、スクリーンに倒立の実像がうつる。"],
+["物体を焦点距離の2倍の位置に置くと、実像はどこにできる？","反対側の焦点距離の2倍の位置（同じ大きさ）","焦点の位置","レンズの位置","できない","物体を焦点に近づけるほど、実像は大きく遠くにできる。"],
+["音の高さを決めるものは？","振動数","振幅","音の速さ","音源の重さ","振動数が多いほど高い音。振幅が大きいほど大きい音。"],
+["音が伝わらないのは？","真空中","水中","空気中","鉄の中","音は物体の振動が伝わる波。"],
+["振動数の単位は？","Hz（ヘルツ）","dB","N","Pa","1秒間に振動する回数。"],
+["質量 600 g の物体を月面ではかると、重さ（重力の大きさ）はどうなる？","地球上の約1/6になる","地球と同じ","約6倍になる","0になる","質量は場所によって変わらない。"],
+["力の大きさの単位は？","N（ニュートン）","kg","J","Pa","約100gの物体にはたらく重力が1N。"],
+["2つの力がつり合う条件に<b>ふくまれない</b>ものは？","作用点が異なる","一直線上にある","大きさが等しい","向きが反対","2力は同じ物体にはたらき、一直線上・同じ大きさ・反対向き。"],
+["圧力の単位 Pa（パスカル）は何を表す？","1 m² あたりにはたらく力（N/m²）","1秒あたりの仕事","1 cm³ あたりの質量","1 m あたりの力","スキー板が雪にしずみにくいのは面積が大きく圧力が小さいから。"]
+]);
+addList("denki",2,[
+["直列回路で、どこでも等しくなるのは？","電流","電圧","抵抗","電力","並列回路では各部分に加わる電圧が等しい。"],
+["電流計のつなぎ方は？","はかりたい部分に直列につなぐ","はかりたい部分に並列につなぐ","電源に直接つなぐ","どちらでもよい","電圧計は並列。はじめは一番大きい−端子につなぐ。"],
+["抵抗の単位は？","Ω（オーム）","A","V","W","V = R × I（オームの法則）。"],
+["異なる物質をこすり合わせたときに生じる電気は？","静電気","電磁誘導","直流","交流","同じ種類の電気はしりぞけ合い、異なる種類は引き合う。"],
+["クルックス管で見られる陰極線（電子線）の正体は？","−の電気をもつ電子の流れ","＋の電気をもつ粒子","光の一種","音の波","電子は−極から＋極へ移動する。"],
+["導線に電流を流したときにできる磁界の向きを、ねじが進む向きとの関係で表したものは？","右ねじの法則","フックの法則","オームの法則","作用・反作用の法則","電流の向きにねじを進めると、ねじを回す向きが磁界の向き。"],
+["コイルに磁石を近づけたり遠ざけたりすると電流が流れる現象は？","電磁誘導","静電気","放電","磁化","発電機に利用されている。このとき流れる電流が誘導電流。"],
+["家庭のコンセントの電流のように、向きが周期的に変わる電流は？","交流","直流","誘導電流","静電気","乾電池の電流は直流。東日本は50Hz、西日本は60Hz。"],
+["磁界の中の導線に電流を流すと、導線は力を受ける。この性質を利用したものは？","モーター","発電機","電池","電球","発電機は電磁誘導を利用。"]
+]);
+addList("undo",3,[
+["外から力がはたらかないか、つり合っているとき、運動している物体は等速直線運動を続ける。この法則は？","慣性の法則","作用・反作用の法則","フックの法則","オームの法則","止まっている物体は止まり続ける。"],
+["壁をおすと、壁からもおし返される。この関係を何という？","作用・反作用","2力のつり合い","慣性","合力","作用・反作用の2力は別々の物体にはたらく。"],
+["斜面を下る台車の速さはどうなる？","しだいに速くなる","一定","しだいにおそくなる","止まる","斜面に平行な重力の分力がはたらき続けるから。斜面が急なほど速さの増え方が大きい。"],
+["水圧について正しいのは？","深いほど大きく、あらゆる向きからはたらく","上向きにだけはたらく","深さに関係ない","浅いほど大きい","浮力は上面と下面の水圧の差で生じる。"],
+["空気中で 2.0 N、水中で 1.4 N を示す物体にはたらく浮力は？","0.6 N","3.4 N","1.4 N","2.0 N","浮力 = 空気中の重さ − 水中の重さ。"],
+["高い所にある物体がもつエネルギーは？","位置エネルギー","運動エネルギー","熱エネルギー","電気エネルギー","高さが高いほど、質量が大きいほど大きい。"],
+["位置エネルギーと運動エネルギーの和が一定に保たれることを何という？","力学的エネルギーの保存","エネルギーの変換","仕事の原理","慣性の法則","摩擦や空気の抵抗がない場合。"],
+["道具を使っても仕事の量は変わらないことを何という？","仕事の原理","慣性の法則","力学的エネルギーの保存","作用・反作用","動滑車を使うと力は半分、ひく距離は2倍。"],
+["火力発電で、エネルギーはどのように移り変わる？","化学 → 熱 → 運動 → 電気","電気 → 熱 → 運動","光 → 電気","位置 → 運動 → 電気","水力発電は位置エネルギー → 運動 → 電気。"],
+["熱の伝わり方で、温度の異なる物体が接していて熱が移動するのは？","伝導","対流","放射","蒸発","対流は液体や気体の移動、放射は光などによる移動。"]
+]);
+
+/* ---------- 化学 ---------- */
+addList("busshitsu",1,[
+["炭素をふくみ、燃えると二酸化炭素ができる物質は？","有機物","無機物","金属","酸化物","砂糖・デンプン・プラスチックなど。食塩やガラスは無機物。"],
+["金属に共通する性質に<b>ふくまれない</b>ものは？","磁石につく","電気をよく通す","みがくと光る（金属光沢）","たたくと広がる（展性）","磁石につくのは鉄など一部の金属だけ。"],
+["オキシドール（うすい過酸化水素水）に二酸化マンガンを加えると発生する気体は？","酸素","水素","二酸化炭素","アンモニア","ものを燃やすはたらきがある。水上置換法で集める。"],
+["石灰石にうすい塩酸を加えると発生し、石灰水を白くにごらせる気体は？","二酸化炭素","酸素","水素","窒素","水に少しとけ、水溶液は酸性。"],
+["亜鉛にうすい塩酸を加えると発生する、最も軽い気体は？","水素","酸素","アンモニア","塩素","火をつけるとポンと音を立てて燃え、水ができる。"],
+["水にとけやすく空気より軽いため、上方置換法で集める気体は？","アンモニア","二酸化炭素","酸素","水素","水溶液はアルカリ性。刺激臭がある。"],
+["空気の成分で最も多い気体は？","窒素","酸素","二酸化炭素","アルゴン","窒素 約78%、酸素 約21%。"],
+["温度による溶解度の差を利用して、とけている物質を固体として取り出す方法は？","再結晶","蒸留","ろ過","中和","食塩は温度による溶解度の変化が小さいので、水を蒸発させて取り出す。"],
+["物質が固体→液体→気体と状態変化するとき、変わらないものは？","質量","体積","密度","粒子の間隔","水は例外的に、固体（氷）になると体積が増える。"],
+["液体を加熱して出てくる気体を冷やし、再び液体として取り出す方法は？","蒸留","再結晶","ろ過","昇華","水とエタノールの混合物の分離など。エタノールの沸点は約78℃。"],
+["ガスバーナーに火をつけた後、炎を青色にするために調節するのは？","空気調節ねじ","ガス調節ねじ","元栓","マッチ","ガス調節ねじで炎の大きさ、空気調節ねじで炎の色を調節する。"],
+["メスシリンダーの目もりを読むときの目の位置は？","液面の最も低いところを真横から","液面の最も高いところを上から","斜め上から","下から見上げる","最小目もりの10分の1まで目分量で読む。"],
+["物質がとけている液体全体を何という？","溶液","溶質","溶媒","溶解度","とけている物質が溶質、とかしている液体が溶媒。"]
+]);
+addList("kagaku",2,[
+["炭酸水素ナトリウムを加熱すると生じる物質の組み合わせは？","炭酸ナトリウム・水・二酸化炭素","ナトリウム・酸素・水素","塩化ナトリウム・水","酸化ナトリウム・炭素","1種類の物質が2種類以上に分かれる化学変化を分解という。"],
+["水を電気分解すると、陰極に発生する気体は？","水素","酸素","塩素","二酸化炭素","陽極は酸素。体積比は 水素 : 酸素 = 2 : 1。"],
+["酸化銀を加熱すると何ができる？","銀と酸素","銀と水","銀と二酸化炭素","酸化銀のまま","2Ag₂O → 4Ag + O₂"],
+["鉄と硫黄の混合物を加熱してできる物質は？","硫化鉄","酸化鉄","硫酸","鉄のまま","できた物質は磁石につかず、塩酸を加えると卵がくさったようなにおいの気体が出る。"],
+["物質が酸素と結びつく化学変化は？","酸化","還元","分解","中和","光や熱を出しながら激しく酸化することを燃焼という。"],
+["酸化銅と炭素の粉末を加熱すると、酸化銅が酸素をうばわれて銅になる。この化学変化は？","還元","酸化","分解","燃焼","同時に炭素は酸化されて二酸化炭素になる。"],
+["化学変化の前後で、物質全体の質量が変わらないことを何という？","質量保存の法則","定比例の法則","倍数比例の法則","慣性の法則","原子の組み合わせが変わるだけで、原子の種類と数は変わらないから。"],
+["化学かいろ（鉄粉の酸化）のように、熱を出す化学変化は？","発熱反応","吸熱反応","中和","還元","塩化アンモニウムと水酸化バリウムの反応は吸熱反応。"],
+["原子の性質として<b>正しくない</b>ものは？","化学変化で別の種類の原子に変わる","それ以上分けられない","種類によって質量や大きさが決まっている","化学変化でなくなったり新しくできたりしない","原子の種類は変わらない。"],
+["いくつかの原子が結びついた、物質の性質を示す最小の粒子は？","分子","原子","イオン","電子","水分子は水素原子2個と酸素原子1個。"],
+["1種類の元素だけでできている物質は？","単体","化合物","混合物","酸化物","水素・酸素・鉄など。2種類以上の元素でできているのが化合物。"]
+]);
+const ELEM=[["H","水素"],["C","炭素"],["N","窒素"],["O","酸素"],["Na","ナトリウム"],["Mg","マグネシウム"],["Al","アルミニウム"],["S","硫黄"],["Cl","塩素"],["K","カリウム"],["Ca","カルシウム"],["Fe","鉄"],["Cu","銅"],["Zn","亜鉛"],["Ag","銀"],["Ba","バリウム"],["Au","金"]];
+ELEM.forEach((e,i)=>{mc("kigo","el-s"+i,`${e[1]}の元素記号`,`<b>${e[1]}</b>の元素記号は？`,e[0],pick(ELEM.map(x=>x[0]),e[0]),"",2);
+  mc("kigo","el-n"+i,`元素記号 ${e[0]}`,`元素記号 <b>${e[0]}</b> が表す元素は？`,e[1],pick(ELEM.map(x=>x[1]),e[1]),"",2)});
+const sub=s=>s.replace(/(\d)/g,"<sub>$1</sub>");
+const FORM=[["H2O","水"],["CO2","二酸化炭素"],["O2","酸素"],["H2","水素"],["N2","窒素"],["NH3","アンモニア"],["NaCl","塩化ナトリウム"],["CuO","酸化銅"],["MgO","酸化マグネシウム"],["FeS","硫化鉄"],["Ag2O","酸化銀"],["HCl","塩化水素"],["NaOH","水酸化ナトリウム"],["Cu","銅"]];
+FORM.forEach((f,i)=>{mc("kigo","fm"+i,`${f[1]}の化学式`,`<b>${f[1]}</b>の化学式は？`,sub(f[0]),pick(FORM.map(x=>sub(x[0])),sub(f[0])),"",2)});
+addList("kigo",2,[
+["水の電気分解を表す化学反応式は？","2H<sub>2</sub>O → 2H<sub>2</sub> + O<sub>2</sub>","H<sub>2</sub>O → H<sub>2</sub> + O","2H<sub>2</sub>O → H<sub>2</sub> + O<sub>2</sub>","H<sub>2</sub>O → 2H + O","矢印の左右で原子の種類と数が等しくなるようにする。"],
+["炭素が燃焼するときの化学反応式は？","C + O<sub>2</sub> → CO<sub>2</sub>","C + O → CO<sub>2</sub>","2C + O<sub>2</sub> → CO<sub>2</sub>","C<sub>2</sub> + O<sub>2</sub> → 2CO","酸素は分子 O₂ で表す。"],
+["銅が酸化するときの化学反応式は？","2Cu + O<sub>2</sub> → 2CuO","Cu + O → CuO","Cu + O<sub>2</sub> → CuO","2Cu + O → Cu<sub>2</sub>O","酸化銅は黒色。"]
+]);
+addList("ion",3,[
+["原子の中心にある原子核をつくる粒子は？","陽子と中性子","電子と陽子","電子と中性子","電子だけ","陽子は＋の電気、中性子は電気をもたない。電子は−の電気。"],
+["原子が電子を失ってできるイオンは？","陽イオン","陰イオン","中性子","分子","Na → Na⁺ + e⁻。電子を受け取ると陰イオン。"],
+["水にとかすと電流が流れる物質は？","電解質（塩化ナトリウムなど）","非電解質（砂糖など）","エタノール","蒸留水","電解質は水にとけて陽イオンと陰イオンに分かれる（電離）。"],
+["塩化銅水溶液を電気分解したとき、陰極に付着する物質は？","銅","塩素","水素","酸素","陽極からは塩素が発生する（プールの消毒のようなにおい）。"],
+["うすい塩酸を電気分解したとき、陰極に発生する気体は？","水素","塩素","酸素","二酸化炭素","陽極には塩素。"],
+["亜鉛板と銅板をうすい塩酸に入れた電池で、−極になるのは？","亜鉛板","銅板","どちらも","どちらでもない","イオンになりやすい金属が−極になり、電子を放出する。"],
+["燃料電池で、水素と酸素が反応してできる物質は？","水","二酸化炭素","塩化水素","アンモニア","水の電気分解と逆の化学変化で電気を取り出す。"],
+["酸性の水溶液に共通してふくまれるイオンは？","水素イオン H⁺","水酸化物イオン OH⁻","ナトリウムイオン Na⁺","塩化物イオン Cl⁻","アルカリ性に共通するのは水酸化物イオン。"],
+["BTB溶液がアルカリ性で示す色は？","青色","黄色","緑色","赤色","酸性で黄色、中性で緑色。"],
+["フェノールフタレイン溶液を赤色に変えるのは？","アルカリ性の水溶液","酸性の水溶液","中性の水溶液","すべての水溶液","酸性・中性では無色。"],
+["酸とアルカリが反応して水ができ、たがいの性質を打ち消し合う化学変化は？","中和","酸化","還元","電離","H⁺ + OH⁻ → H₂O。同時に塩ができる。"],
+["うすい硫酸とうすい水酸化バリウム水溶液を混ぜたときにできる白い沈殿は？","硫酸バリウム","塩化ナトリウム","炭酸カルシウム","水酸化ナトリウム","水にとけにくい塩。"],
+["pH の値が 7 より小さい水溶液の性質は？","酸性","中性","アルカリ性","決まらない","7が中性、7より大きいとアルカリ性。"],
+["マグネシウム・亜鉛・銅のうち、最もイオンになりやすい金属は？","マグネシウム","亜鉛","銅","どれも同じ","イオンへのなりやすさ：Mg ＞ Zn ＞ Cu。"]
+]);
+
+/* ---------- 生物 ---------- */
+addList("shokubutsu",1,[
+["被子植物の花のつくりを外側から順に並べると？","がく → 花弁 → おしべ → めしべ","花弁 → がく → めしべ → おしべ","おしべ → めしべ → 花弁 → がく","がく → おしべ → 花弁 → めしべ","めしべの根もとのふくらみが子房。"],
+["受粉の後、子房と胚珠はそれぞれ何になる？","子房 → 果実、胚珠 → 種子","子房 → 種子、胚珠 → 果実","どちらも果実","どちらも種子","受粉はおしべの花粉がめしべの柱頭につくこと。"],
+["マツのように、子房がなく胚珠がむき出しの植物は？","裸子植物","被子植物","シダ植物","コケ植物","マツの雌花のりん片に胚珠がある。"],
+["単子葉類の特徴は？","葉脈が平行、根はひげ根","葉脈が網目状、根は主根と側根","子葉が2枚","維管束が輪状に並ぶ","イネ・トウモロコシ・ユリなど。"],
+["花弁が1枚1枚離れている離弁花類は？","アブラナ","アサガオ","ツツジ","タンポポ","アサガオ・ツツジ・タンポポは合弁花類。"],
+["種子をつくらず、胞子でふえる植物の組み合わせは？","シダ植物・コケ植物","裸子植物・被子植物","単子葉類・双子葉類","離弁花類・合弁花類","シダ植物には根・茎・葉の区別があり、コケ植物にはない。"],
+["光合成が行われる、細胞の中の緑色の粒は？","葉緑体","核","液胞","細胞壁","二酸化炭素と水から、光のエネルギーでデンプンと酸素をつくる。"],
+["デンプンがあるかを調べる薬品と、反応したときの色は？","ヨウ素液・青紫色","ベネジクト液・赤かっ色","BTB溶液・黄色","石灰水・白色","ベネジクト液は麦芽糖などの糖を調べる（加熱が必要）。"],
+["植物のからだから水が水蒸気となって出ていく現象は？","蒸散","光合成","呼吸","蒸留","主に葉の裏側に多い気孔から出ていく。"],
+["根から吸い上げた水や養分が通る管は？","道管","師管","気孔","維管束鞘","葉でつくられた養分が通るのは師管。道管と師管の集まりが維管束。"],
+["根の先端近くに多く見られ、根の表面積を大きくするつくりは？","根毛","気孔","柔毛","子葉","水や養分を効率よく吸収できる。"]
+]);
+addList("dobutsu",1,[
+["背骨をもつ動物を何という？","脊椎動物","無脊椎動物","節足動物","軟体動物","魚類・両生類・は虫類・鳥類・哺乳類に分けられる。"],
+["子が親と同じような姿で生まれる「胎生」の動物は？","哺乳類","鳥類","は虫類","両生類","ほかの脊椎動物は卵生。"],
+["子はえらで呼吸し、親は肺と皮膚で呼吸する動物のなかまは？","両生類","魚類","は虫類","哺乳類","カエル・イモリなど。"],
+["まわりの温度が変わっても体温がほぼ一定に保たれる動物は？","鳥類と哺乳類","魚類と両生類","は虫類","すべての脊椎動物","恒温動物という。ほかは変温動物。"],
+["からだが外骨格でおおわれ、からだやあしに節がある動物は？","節足動物","軟体動物","脊椎動物","環形動物","昆虫類・甲殻類（エビ・カニ）など。"],
+["イカやアサリのように、内臓が外とう膜でおおわれた動物は？","軟体動物","節足動物","甲殻類","両生類","骨格をもたない。"],
+["草食動物の目のつき方の特徴は？","横向きで、広い範囲を見わたせる","前向きで、立体的に見える","上向き","目がない","肉食動物は前向きで、きょりをはかりやすい。"]
+]);
+addList("dobutsu",2,[
+["植物の細胞だけに見られるつくりの組み合わせは？","細胞壁・葉緑体・発達した液胞","核・細胞膜","核・細胞壁","細胞膜・葉緑体・核","核と細胞膜は動物・植物の細胞に共通。"],
+["だ液にふくまれ、デンプンを分解する消化酵素は？","アミラーゼ","ペプシン","リパーゼ","トリプシン","ペプシンは胃液にふくまれタンパク質を分解。リパーゼはすい液で脂肪を分解。"],
+["肝臓でつくられ、脂肪の消化を助ける液は？","胆汁","だ液","胃液","すい液","胆のうにたくわえられる。消化酵素はふくまない。"],
+["小腸の内側のかべにある、表面積を大きくする突起は？","柔毛","肺胞","根毛","繊毛","ブドウ糖とアミノ酸は毛細血管へ、脂肪酸とモノグリセリドはリンパ管へ。"],
+["タンパク質は最終的に何に分解されて吸収される？","アミノ酸","ブドウ糖","脂肪酸","グリセリン","デンプン → ブドウ糖、脂肪 → 脂肪酸とモノグリセリド。"],
+["有害なアンモニアを害の少ない尿素に変える器官は？","肝臓","じん臓","すい臓","小腸","じん臓は血液中の尿素などをこし出して尿をつくる。"],
+["肺の中にある、気管支の先の小さなふくろは？","肺胞","柔毛","心房","ネフロン","表面積が大きく、酸素と二酸化炭素の交換を効率よく行える。"],
+["酸素を運ぶ血液の成分は？","赤血球","白血球","血小板","血しょう","ヘモグロビンをふくむ。白血球は細菌を分解、血小板は血液を固める。"],
+["心臓から肺へ血液を送る血管は？","肺動脈","肺静脈","大動脈","大静脈","肺動脈には静脈血（二酸化炭素が多い）が流れる。"],
+["熱いものにさわって思わず手を引っこめるような、意識と関係なく起こる反応は？","反射","条件反射","随意運動","反応時間","刺激の信号が脳を経由せず、せきずいから命令が出る。"],
+["脳やせきずいをまとめて何という？","中枢神経","末しょう神経","感覚神経","運動神経","感覚神経と運動神経は末しょう神経。"],
+["筋肉の両端にあり、骨についている部分は？","けん","関節","軟骨","じん帯","筋肉が縮むことで骨が動く。"]
+]);
+addList("iden",3,[
+["からだをつくる細胞がふえる細胞分裂は？","体細胞分裂","減数分裂","受精","発生","分裂の前に染色体が複製され、もとの細胞と同じ数の染色体をもつ細胞が2つできる。"],
+["根がよくのびる部分は？","根の先端付近（成長点の近く）","根もと","根の中央","どこも同じ","細胞分裂が盛んで、細胞が大きくなることで成長する。"],
+["ジャガイモのいもからの芽のように、からだの一部から新しい個体ができる無性生殖は？","栄養生殖","有性生殖","受精","減数分裂","親とまったく同じ遺伝子を受けつぐ。"],
+["生殖細胞がつくられるときの、染色体の数が半分になる細胞分裂は？","減数分裂","体細胞分裂","受精","無性生殖","受精で、もとの数にもどる。"],
+["遺伝子の本体である物質は？","DNA（デオキシリボ核酸）","タンパク質","アミノ酸","デンプン","染色体にふくまれている。"],
+["エンドウの丸（AA）としわ（aa）をかけ合わせた子はすべて丸になった。このように子に現れる形質は？","顕性形質（優性形質）","潜性形質（劣性形質）","中間の形質","突然変異","メンデルが実験した。"],
+["Aa どうしをかけ合わせたとき、孫の丸としわの数の比は？","丸 : しわ = 3 : 1","1 : 1","1 : 3","2 : 1","AA : Aa : aa = 1 : 2 : 1 で、丸（AA・Aa）が3、しわが1。"],
+["対になっている遺伝子が、生殖細胞をつくるとき別々に分かれて入ることを何という？","分離の法則","顕性の法則","独立の法則","質量保存の法則","メンデルの法則の一つ。"],
+["ヒトのうで・コウモリのつばさ・クジラのひれのように、起源が同じ器官は？","相同器官","痕跡器官","感覚器官","消化器官","生物が進化してきた証拠の一つ。"],
+["は虫類と鳥類の両方の特徴をもつ化石の生物は？","シソチョウ（始祖鳥）","アンモナイト","三葉虫","ナウマンゾウ","つばさや羽毛と、歯や爪をあわせもつ。"],
+["生態系で、光合成によって有機物をつくる生物は？","生産者","消費者","分解者","捕食者","植物などが生産者、動物は消費者。"],
+["落ち葉や死がいなどの有機物を無機物に分解する、菌類や細菌類などは？","分解者","生産者","消費者","寄生者","カビやキノコは菌類、乳酸菌や大腸菌は細菌類。"],
+["生物どうしの「食べる・食べられる」の関係のつながりは？","食物連鎖","生物濃縮","光合成","呼吸","網の目のようにからみ合ったものを食物網という。"],
+["もともとその地域にいなかったが、人間の活動によって持ちこまれ定着した生物は？","外来種（外来生物）","在来種","絶滅危惧種","固有種","アライグマ・オオクチバスなど。"],
+["地球温暖化の主な原因とされる、熱をにがしにくくする気体は？","温室効果ガス（二酸化炭素など）","酸素","窒素","水素","化石燃料の大量消費で増加している。"]
+]);
+
+/* ---------- 地学 ---------- */
+addList("daichi",1,[
+["マグマのねばりけが強い火山の特徴は？","白っぽい溶岩で、激しい噴火・ドーム状","黒っぽい溶岩で、おだやかな噴火","傾斜がゆるやか","たて状火山","昭和新山・雲仙普賢岳など。ねばりけが弱いとマウナロアのような傾斜のゆるやかな形。"],
+["マグマが地表や地表付近で急に冷えてできた岩石は？","火山岩","深成岩","堆積岩","変成岩","斑晶と石基からなる斑状組織。流紋岩・安山岩・玄武岩。"],
+["マグマが地下深くでゆっくり冷えてできた、等粒状組織の岩石は？","深成岩","火山岩","堆積岩","凝灰岩","花こう岩・せん緑岩・斑れい岩。"],
+["白っぽく、決まった方向に割れやすい鉱物は？","長石","石英","黒雲母","かんらん石","石英は無色・白色で不規則に割れる。"],
+["地震で、はじめに起こる小さなゆれは？","初期微動（P波による）","主要動（S波による）","余震","前震","あとからくる大きなゆれが主要動。"],
+["震度は何段階に分けられている？","10段階","7段階","8段階","12段階","0〜4、5弱・5強・6弱・6強、7。"],
+["地震そのものの規模（エネルギー）を表すものは？","マグニチュード","震度","震央","初期微動継続時間","マグニチュードが1大きいとエネルギーは約32倍。"],
+["日本付近で大きな地震が起こりやすい理由は？","海洋プレートが大陸プレートの下にしずみこんでいるから","火山がないから","プレートがないから","地下水が多いから","4枚のプレートが集まっている。"],
+["れき岩・砂岩・泥岩は何によって区別する？","粒の大きさ","色","かたさ","ふくまれる化石","粒が大きい順に、れき岩 → 砂岩 → 泥岩。"],
+["うすい塩酸をかけると二酸化炭素が発生する堆積岩は？","石灰岩","チャート","凝灰岩","砂岩","チャートはとてもかたく、塩酸に反応しない。"],
+["火山灰などが積もってできた岩石は？","凝灰岩","石灰岩","泥岩","花こう岩","その層ができたころに火山の噴火があったとわかる。"],
+["地層ができた当時の環境を推定できる化石は？","示相化石","示準化石","生きた化石","標準化石","サンゴ（あたたかく浅い海）、シジミ（河口や湖）。"],
+["アンモナイトや恐竜の化石が見つかった地層の地質年代は？","中生代","古生代","新生代","先カンブリア時代","三葉虫は古生代、ビカリアやナウマンゾウは新生代。"],
+["地層に大きな力が加わり、波打つように曲がったものは？","しゅう曲","断層","不整合","隆起","地層がずれたものが断層。"]
+]);
+addList("tenki",2,[
+["1気圧はおよそ何 hPa？","1013 hPa","100 hPa","760 hPa","10000 hPa","大気圧は上空ほど小さくなる。"],
+["等圧線の間隔がせまいところの風は？","強い","弱い","吹かない","向きが一定","気圧の差が大きいほど風が強い。"],
+["高気圧の中心付近の天気と気流は？","下降気流で晴れやすい","上昇気流でくもりや雨","下降気流で雨","上昇気流で晴れ","北半球では時計回りにふき出す。低気圧は反時計回りにふきこむ。"],
+["寒冷前線の通過時の特徴は？","積乱雲が発達し短時間に強い雨。通過後は気温が下がる","乱層雲で長時間おだやかな雨。通過後は気温が上がる","晴れが続く","気温が上がる","通過後、風は北寄りに変わる。"],
+["温暖前線の通過時の特徴は？","乱層雲などで長時間おだやかな雨。通過後は気温が上がる","積乱雲で強い雨。通過後は気温が下がる","雪が降る","雷が多い","通過後、風は南寄りになる。"],
+["梅雨や秋雨の時期に見られる、ほとんど動かない前線は？","停滞前線","閉塞前線","寒冷前線","温暖前線","寒気と暖気の勢力がつり合っている。"],
+["空気中の水蒸気が冷えて水滴に変わり始める温度は？","露点","沸点","融点","飽和点","露点での水蒸気量は飽和水蒸気量に等しい。"],
+["雲ができるしくみとして正しいのは？","空気が上昇して膨張し、温度が下がって露点に達する","空気が下降して圧縮される","気温が上がる","地面で水が凍る","上昇気流のところで雲ができる。"],
+["冬の日本付近の気圧配置は？","西高東低","南高北低","東高西低","北高南低","シベリア高気圧から北西の季節風。夏は南高北低で南東の季節風。"],
+["天気図記号で、風向を表す矢の向きは？","風がふいてくる方向","風がふいていく方向","雲の流れる方向","前線の方向","矢羽根の数は風力。"],
+["晴れた日の昼、海岸付近でふく風は？","海から陸へ（海風）","陸から海へ（陸風）","上空から地上へ","無風","陸の方があたたまりやすく、陸上で上昇気流が起こる。"],
+["日本の上空をふく、天気が西から東へ変わる原因となる風は？","偏西風","季節風","貿易風","海風","低気圧や移動性高気圧も西から東へ移動する。"]
+]);
+addList("uchu",3,[
+["太陽が東からのぼり南を通って西にしずむように見える理由は？","地球が西から東へ自転しているから","太陽が地球のまわりを回っているから","地球が公転しているから","月の影響","日周運動という。"],
+["星は1時間に約何度動いて見える？","15°","30°","1°","45°","360° ÷ 24時間。"],
+["北の空の星が回転して見える中心にある星は？","北極星","北斗七星","シリウス","ベガ","北の空の星は北極星を中心に反時計回りに回る。"],
+["同じ時刻に見える星座の位置は、1か月に約何度ずれる？","30°（東から西へ）","15°（西から東へ）","1°","90°","地球の公転による年周運動。"],
+["季節によって南中高度や昼の長さが変わる原因は？","地軸が公転面に垂直な方向から傾いているから","太陽との距離が変わるから","月の満ち欠け","自転の速さが変わるから","地軸は約23.4°傾いている。"],
+["満月の次に見られる月の形は？","下弦の月","上弦の月","新月","三日月","新月 → 三日月 → 上弦 → 満月 → 下弦 → 新月（約29.5日）。"],
+["月食が起こるときの並び順は？","太陽 → 地球 → 月","太陽 → 月 → 地球","月 → 太陽 → 地球","地球 → 太陽 → 月","月が地球の影に入る（満月のとき）。日食は太陽 → 月 → 地球（新月のとき）。"],
+["明け方の東の空に見える金星を何という？","明けの明星","よいの明星","北極星","一番星","夕方の西の空ではよいの明星。真夜中には見えない（内惑星）。"],
+["太陽の黒点が黒く見える理由は？","まわりより温度が低いから","穴があいているから","温度が高いから","月の影","黒点の移動から太陽が自転していること、形の変化から球形であることがわかる。"],
+["太陽系の惑星で、地球型惑星に<b>ふくまれない</b>のは？","木星","水星","金星","火星","地球型は小さく密度が大きい。木星型は大きく密度が小さい。"],
+["太陽系をふくむ、多数の恒星の集まりを何という？","銀河系","太陽系","星座","宇宙","天の川は銀河系を内側から見たすがた。"]
+]);
+
+/* ---------- 暗記カード ---------- */
+const C=(arr,pre,gr)=>arr.map((r,i)=>({id:pre+i,f:r[0],b:`<div class="mean">${r[1]}</div>`,gr:r[2]||gr}));
+DECKS.kigo={nm:"元素記号",cards:ELEM.map((e,i)=>({id:"el"+i,f:e[0],b:`<div class="mean">${e[1]}</div>`,gr:2})).concat(FORM.map((f,i)=>({id:"fm"+i,f:sub(f[0]),b:`<div class="mean">${f[1]}</div>`,gr:2})))};
+DECKS.koshiki={nm:"公式",cards:C([
+["密度","質量(g) ÷ 体積(cm³)",1],["質量パーセント濃度","溶質の質量 ÷ 溶液の質量 × 100",1],["圧力","力(N) ÷ 面積(m²)",1],["フックの法則","ばねののびは力の大きさに比例",1],
+["オームの法則","電圧V = 抵抗R × 電流I",2],["電力","電圧(V) × 電流(A)",2],["電力量・熱量","電力(W) × 時間(s)〔J〕",2],["湿度","水蒸気量 ÷ 飽和水蒸気量 × 100",2],
+["直列の合成抵抗","R = R₁ + R₂",2],["並列の合成抵抗","1/R = 1/R₁ + 1/R₂",2],["銅：酸素","4 : 1",2],["マグネシウム：酸素","3 : 2",2],
+["速さ","移動距離 ÷ 時間",3],["仕事","力(N) × 力の向きに動いた距離(m)",3],["仕事率","仕事(J) ÷ 時間(s)",3],["浮力","空気中の重さ − 水中の重さ",3]
+],"ko")};
+DECKS.yogo={nm:"重要用語",cards:C([
+["光合成","葉緑体で光を使い、二酸化炭素と水からデンプンと酸素をつくる",1],["蒸散","植物の体から水が水蒸気となって出ていく（気孔）",1],["胎生","子が母体内である程度育ってから生まれる（哺乳類）",1],
+["再結晶","溶解度の差を利用して物質を固体で取り出す",1],["示相化石","当時の環境がわかる化石（サンゴ・シジミ）",1],["示準化石","地質年代がわかる化石（三葉虫・アンモナイト）",1],
+["初期微動継続時間","P波とS波の到着時刻の差。震源からの距離に比例",1],
+["酸化と還元","酸素と結びつく／酸化物から酸素をうばう",2],["質量保存の法則","化学変化の前後で全体の質量は変わらない",2],["電磁誘導","コイルの中の磁界が変化すると電流が流れる",2],
+["露点","水蒸気が水滴になり始める温度",2],["柔毛","小腸のかべの突起。養分を吸収",2],["反射","刺激に対して無意識に起こる反応（せきずいが命令）",2],
+["電離","電解質が水にとけて陽イオンと陰イオンに分かれる",3],["中和","H⁺ + OH⁻ → H₂O。酸とアルカリが打ち消し合う",3],["減数分裂","生殖細胞をつくる分裂。染色体が半分になる",3],
+["顕性形質","対立形質の純系をかけ合わせたとき子に現れる形質",3],["慣性の法則","力がはたらかなければ静止または等速直線運動を続ける",3],["力学的エネルギーの保存","位置エネルギー＋運動エネルギーは一定",3],["分解者","有機物を無機物に分解する菌類・細菌類",3]
+],"yo")};
+
+/* ---------- 要点 ---------- */
+LESSONS.push(
+{g:"物",gr:[1],t:"光・音・力",h:`<p>反射角 = 入射角。空気→水では屈折角＜入射角。凸レンズ：焦点の外側→倒立の実像、内側→正立の虚像。</p><p>音：振動数が多い→高い音、振幅が大きい→大きい音。空気中で約340 m/s。真空中は伝わらない。</p><p>力の単位 N（100gの物体にかかる重力≒1N）。ばねののびは力に比例（フックの法則）。圧力 = 力 ÷ 面積（Pa）。</p>`},
+{g:"物",gr:[2],t:"電流と磁界",h:`<div class="tbl"><table><tr><th></th><th>直列</th><th>並列</th></tr><tr><td>電流</td><td>どこも同じ</td><td>和が全体</td></tr><tr><td>電圧</td><td>和が全体</td><td>どこも同じ</td></tr><tr><td>抵抗</td><td>R₁+R₂</td><td>1/R = 1/R₁+1/R₂</td></tr></table></div><p>V = RI、電力 W = VI、熱量 J = W × 秒。右ねじの法則、電磁誘導（発電機）、直流と交流。</p>`},
+{g:"物",gr:[3],t:"運動とエネルギー",h:`<p>慣性の法則、作用・反作用（別々の物体にはたらく）。斜面を下る物体はしだいに速くなる。</p><p>水圧は深いほど大きい。浮力 = 空気中の重さ − 水中の重さ。</p><p>仕事 J = N × m、仕事率 W = J ÷ s。仕事の原理。力学的エネルギーの保存。</p>`},
+{g:"化",gr:[1],t:"身のまわりの物質",h:`<div class="tbl"><table><tr><th>気体</th><th>発生方法</th><th>集め方・性質</th></tr><tr><td>酸素</td><td>オキシドール＋二酸化マンガン</td><td>水上置換・ものを燃やす</td></tr><tr><td>二酸化炭素</td><td>石灰石＋うすい塩酸</td><td>下方置換・水上置換／石灰水が白くにごる</td></tr><tr><td>水素</td><td>亜鉛＋うすい塩酸</td><td>水上置換・最も軽い・燃えて水</td></tr><tr><td>アンモニア</td><td>塩化アンモニウム＋水酸化カルシウム</td><td>上方置換・アルカリ性</td></tr></table></div><p>密度 = 質量 ÷ 体積。濃度 = 溶質 ÷ 溶液 × 100。状態変化で質量は変わらない。</p>`},
+{g:"化",gr:[2],t:"化学変化と原子・分子",h:`<p>分解：炭酸水素ナトリウム → 炭酸ナトリウム＋水＋二酸化炭素／水 → 水素（陰極）＋酸素（陽極）。</p><p>酸化（酸素と結びつく）・還元（酸素をうばわれる）。質量保存の法則。銅：酸素 = 4:1、マグネシウム：酸素 = 3:2。</p><p>化学反応式は左右で原子の種類と数をそろえる。</p>`},
+{g:"化",gr:[3],t:"化学変化とイオン",h:`<p>原子 = 原子核（陽子＋中性子）＋電子。電子を失う→陽イオン、受け取る→陰イオン。</p><p>酸性：H⁺（BTB黄・青リトマス→赤）、アルカリ性：OH⁻（BTB青・フェノールフタレイン赤）。中和 H⁺ + OH⁻ → H₂O。</p><p>電池：イオンになりやすい金属が−極（Mg ＞ Zn ＞ Cu）。</p>`},
+{g:"生",gr:[1],t:"植物の分類とつくり",h:`<p>種子植物（被子植物：単子葉類・双子葉類〈離弁花・合弁花〉／裸子植物）と胞子でふえる植物（シダ・コケ）。</p><p>単子葉：平行脈・ひげ根・維管束が散らばる。双子葉：網状脈・主根と側根・維管束が輪状。</p><p>光合成：二酸化炭素＋水 →（光）→ デンプン＋酸素。道管は水、師管は養分。</p>`},
+{g:"生",gr:[1,2],t:"動物の分類・生物のからだ",h:`<p>脊椎動物：魚類・両生類・は虫類・鳥類・哺乳類（胎生）。恒温動物は鳥類と哺乳類。無脊椎動物：節足動物・軟体動物など。</p><p>（中2）消化：デンプン→ブドウ糖（アミラーゼ）、タンパク質→アミノ酸（ペプシン・トリプシン）、脂肪→脂肪酸とモノグリセリド（リパーゼ・胆汁）。小腸の柔毛で吸収。</p><p>赤血球（酸素）・白血球・血小板・血しょう。肺動脈には静脈血。反射はせきずいが命令。</p>`},
+{g:"生",gr:[3],t:"生命の連続・自然と人間",h:`<p>体細胞分裂と減数分裂。無性生殖（分裂・栄養生殖）と有性生殖。遺伝子の本体はDNA。</p><p>メンデル：顕性形質、分離の法則、孫の代で 3 : 1。進化の証拠：相同器官、シソチョウ。</p><p>生産者・消費者・分解者、食物連鎖、外来種、地球温暖化。</p>`},
+{g:"地",gr:[1],t:"大地の変化",h:`<p>マグマのねばりけ：強い→白っぽい・激しい噴火、弱い→黒っぽい・おだやか。火山岩（斑状組織）と深成岩（等粒状組織）。</p><p>P波（初期微動）・S波（主要動）。震度は10段階、規模はマグニチュード。</p><p>堆積岩：れき岩・砂岩・泥岩（粒の大きさ）、石灰岩（塩酸でCO₂）、チャート、凝灰岩。示相化石・示準化石。</p>`},
+{g:"地",gr:[2],t:"天気とその変化",h:`<p>高気圧：下降気流・晴れ・時計回りにふき出す。低気圧：上昇気流・くもりや雨・反時計回りにふきこむ。</p><p>寒冷前線：積乱雲・短時間の強い雨・通過後気温↓。温暖前線：乱層雲・長時間の雨・通過後気温↑。</p><p>湿度 = 水蒸気量 ÷ 飽和水蒸気量 × 100。冬は西高東低（北西の季節風）、夏は南高北低。</p>`},
+{g:"地",gr:[3],t:"地球と宇宙",h:`<p>自転（西→東）→日周運動、星は1時間に15°。公転→年周運動、1か月に30°。地軸の傾き23.4°で季節が生じる。</p><p>南中高度：春分・秋分 90°−緯度、夏至 +23.4°、冬至 −23.4°。</p><p>月の満ち欠け、月食（太陽-地球-月）、日食（太陽-月-地球）。金星は明けの明星（東・明け方）とよいの明星（西・夕方）。</p>`}
+);
+
+</script>
+<script>
+/* ===== 学年・保存 ===== */
+const GNAME=["全学年","中1","中2","中3"];
+const KEY=APP.key;
+let S={srs:{},days:{},known:{},grade:0};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const inG=x=>!S.grade||x.gr===S.grade;
+const QG=()=>Q.filter(inG);
+const today=()=>{const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*6e4)/864e5)};
+const INTERVAL=[0,1,2,4,8,16,32];
+function record(id,ok){const t=today(),r=S.srs[id]||{b:0,d:t,w:0,c:0};
+  if(ok){r.b=Math.min(r.b+1,6);r.c++}else{r.b=1;r.w++}
+  r.d=t+(ok?INTERVAL[r.b]:0);S.srs[id]=r;
+  const dk=String(t);S.days[dk]=S.days[dk]||{n:0,c:0};S.days[dk].n++;if(ok)S.days[dk].c++;save()}
+function streak(){let t=today(),n=0;if(!S.days[t])t--;while(S.days[t]){n++;t--}return n}
+const isDue=q=>{const r=S.srs[q.id];return r&&r.d<=today()};
+const boxOf=q=>(S.srs[q.id]||{}).b||0;
+const mastered=q=>boxOf(q)>=3;
+const isWeak=q=>{const r=S.srs[q.id];return r&&r.w>0&&r.b<3};
+function buildSet(pool,n){n=n||10;
+  const due=shuffle(pool.filter(isDue)).sort((a,b)=>boxOf(a)-boxOf(b));
+  const fresh=shuffle(pool.filter(q=>!S.srs[q.id]));
+  const k=Math.ceil(n*.6);
+  let set=due.slice(0,k).concat(fresh).slice(0,n);
+  if(set.length<n)set=set.concat(due.slice(k)).slice(0,n);
+  if(set.length<n){const rest=shuffle(pool.filter(q=>set.indexOf(q)<0)).sort((a,b)=>boxOf(a)-boxOf(b));set=set.concat(rest).slice(0,n)}
+  return shuffle(set)}
+function dailySet(){const P=QG();const fresh=[];const byCat=CATS.map(c=>shuffle(P.filter(q=>q.cat===c.id&&!S.srs[q.id])));
+  for(let k=0;fresh.length<10&&k<20;k++)byCat.forEach(a=>{if(a[k])fresh.push(a[k])});
+  const due=shuffle(P.filter(isDue)).sort((a,b)=>boxOf(a)-boxOf(b));
+  let set=due.slice(0,6).concat(shuffle(fresh)).slice(0,10);
+  if(set.length<10)set=set.concat(due.slice(6)).slice(0,10);
+  if(set.length<10)set=set.concat(shuffle(P.filter(q=>set.indexOf(q)<0))).slice(0,10);
+  return shuffle(set)}
+
+/* ===== 今日 ===== */
+const GOAL=20;
+function renderHome(){
+  const P=QG(),d=S.days[today()]||{n:0,c:0},due=P.filter(isDue).length,weak=P.filter(isWeak).length;
+  const p=Math.min(d.n/GOAL,1),C=2*Math.PI*36,mast=P.filter(mastered).length;
+  const catHtml=g=>CATS.filter(c=>c.g===g&&P.some(q=>q.cat===c.id)).map(c=>{const qs=P.filter(q=>q.cat===c.id),m=qs.filter(mastered).length,du=qs.filter(isDue).length;
+    const isGen=qs[0].type==="gen";
+    return `<button class="cat" data-cat="${c.id}"><span class="nm">${c.nm}</span><span class="meta">${isGen?"計算・毎回ちがう問題":qs.length+"問"} ・ 定着 ${Math.round(m/qs.length*100)}%${du?` ・ 復習 ${du}`:""}</span><span class="bar"><i style="width:${m/qs.length*100}%"></i></span></button>`}).join("");
+  const groups=GROUPS.map(G=>{const h=catHtml(G.k);return h?`<div class="group-title"><span class="kan">${G.nm}</span><span class="eyebrow">分野別に解く</span></div><div class="cats">${h}</div>`:""}).join("");
+  document.getElementById("v-home").innerHTML=`
+  <p class="note" style="margin:0"><b>${GNAME[S.grade]}</b>の範囲：${APP.gdesc[S.grade]}</p>
+  <div class="sheet today">
+    <svg class="ring" viewBox="0 0 84 84" role="img" aria-label="今日の目標の達成度">
+      <circle class="bgc" cx="42" cy="42" r="36"/><circle class="fg" cx="42" cy="42" r="36" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p)}" transform="rotate(-90 42 42)"/>
+      <text x="42" y="50" text-anchor="middle">${d.n}</text></svg>
+    <div class="stats"><div class="eyebrow">今日の学習</div>
+      <div>目標 <b>${GOAL}</b>問中 <b>${d.n}</b>問・正解 <b>${d.c}</b></div>
+      <div class="note">復習待ち <b>${due}</b> ／ 定着 <b>${mast}</b>/${P.length}</div></div>
+  </div>
+  <button class="big-btn" id="b-daily">今日のおすすめ10問<span>${due?`復習 ${Math.min(due,6)}問＋新しい問題`:"いろいろな分野から新しい問題"}・間違えた問題はくり返し出ます</span></button>
+  <div class="row-btns"><button class="sub-btn" id="b-weak">苦手だけ（${weak}）</button><button class="sub-btn" id="b-mix">ランダム20問</button></div>
+  ${groups}
+  <p class="note">正解した問題は 1→2→4→8日後… と間をあけて出題され、間違えた問題はすぐ復習に戻ります（間隔反復）。3回続けて正解すると「定着」です。</p>`;
+  document.getElementById("streak").textContent=`連続 ${streak()}日`;
+  document.getElementById("b-daily").onclick=()=>startQuiz(dailySet(),"今日のおすすめ");
+  document.getElementById("b-mix").onclick=()=>startQuiz(shuffle(QG()).slice(0,20),"ランダム20問");
+  document.getElementById("b-weak").onclick=()=>{const w=QG().filter(isWeak);if(w.length)startQuiz(shuffle(w).slice(0,15),"苦手の復習");else showView("weak")};
+  Array.prototype.forEach.call(document.querySelectorAll("#v-home .cat"),b=>b.onclick=()=>{const c=CATS.filter(x=>x.id===b.dataset.cat)[0];startQuiz(buildSet(QG().filter(q=>q.cat===c.id)),c.nm)});
+}
+
+/* ===== クイズ ===== */
+const QZ=document.getElementById("quiz");
+let RUN=null;
+function startQuiz(list,title){if(!list.length)return;RUN={list:list,i:0,title:title,res:[]};QZ.hidden=false;document.body.style.overflow="hidden";renderQ()}
+function closeQuiz(){QZ.hidden=true;document.body.style.overflow="";RUN=null;renderAll()}
+function materialize(q){if(q.type!=="gen")return q;
+  for(let t=0;t<20;t++){try{const r=q.fn();const w=fillWrong(String(r[1]),r[2]||[],r[4]||(g=>String(r[1])+"＋"+(g+1)));if(w.length===3)return {type:"mc",cat:q.cat,id:q.id,label:q.label,prompt:r[0],correct:String(r[1]),wrong:w,explain:r[3]||"",gr:q.gr}}catch(e){}}
+  throw new Error("問題を作れませんでした: "+q.id)}
+function renderQ(){
+  const q=materialize(RUN.list[RUN.i]),cat=CATS.filter(c=>c.id===q.cat)[0],grp=GROUPS.filter(G=>G.k===cat.g)[0];
+  RUN.cur=q;
+  const ch=shuffle([q.correct].concat(q.wrong));
+  QZ.innerHTML=`<div class="wrap"><div class="qhead"><button class="x" id="qx" aria-label="やめる">×</button><span class="bar"><i style="width:${RUN.i/RUN.list.length*100}%"></i></span><span class="cnt">${RUN.i+1}/${RUN.list.length}</span></div>
+  <div class="qcat">${grp.nm}・${cat.nm}</div><div class="qtext">${q.prompt}</div>
+  <div class="choices">${ch.map((c,k)=>`<button class="ch" data-k="${k}"><span class="lb">${"アイウエ"[k]}</span><span>${c}</span></button>`).join("")}</div><div id="qfb"></div></div>`;
+  Array.prototype.forEach.call(QZ.querySelectorAll(".ch"),b=>b.onclick=()=>{const ok=ch[+b.dataset.k]===q.correct;
+    Array.prototype.forEach.call(QZ.querySelectorAll(".ch"),x=>{x.disabled=true;if(ch[+x.dataset.k]===q.correct)x.classList.add("ok")});if(!ok)b.classList.add("ng");
+    answer(q,ok,`正解：${q.correct}${q.explain?"<br>"+q.explain:""}`)});
+  document.getElementById("qx").onclick=closeQuiz;
+  QZ.scrollTop=0;
+}
+function answer(q,ok,html){record(q.id,ok);RUN.res.push({q:q,src:RUN.list[RUN.i],ok:ok});
+  const last=RUN.i===RUN.list.length-1;
+  document.getElementById("qfb").innerHTML=`<div class="fb ${ok?"ok":"ng"}"><div class="v">${ok?"正解！":"おしい！"}</div>${html}</div><button class="big-btn next" id="qn">${last?"結果を見る":"次へ"}</button>`;
+  const n=document.getElementById("qn");n.onclick=()=>{if(last)renderResult();else{RUN.i++;renderQ()}};
+  try{n.scrollIntoView({behavior:"smooth",block:"nearest"})}catch(e){}}
+function renderResult(){const c=RUN.res.filter(r=>r.ok).length,ng=RUN.res.filter(r=>!r.ok);
+  const msg=c===RUN.res.length?"全問正解！この調子。":c/RUN.res.length>=.7?"よくできました。間違えた問題は明日以降にまた出ます。":"間違えた問題こそ伸びしろ。もう一度解いてみよう。";
+  QZ.innerHTML=`<div class="wrap result"><div class="eyebrow">${esc(RUN.title)}</div><div class="score">${c}<small style="font-size:1.2rem">/${RUN.res.length}</small></div><p>${msg}</p>
+  ${ng.length?`<div class="sheet"><div class="eyebrow">間違えた問題</div><ul>${ng.map(r=>`<li>${esc(r.q.label)} → <b>${r.q.correct}</b></li>`).join("")}</ul></div>
+  <button class="big-btn" id="r-again">間違えた${ng.length}問をもう一度</button>`:""}
+  <button class="sub-btn" id="r-close">ホームにもどる</button></div>`;
+  const ag=document.getElementById("r-again");if(ag)ag.onclick=()=>startQuiz(shuffle(ng.map(r=>r.src)),"間違えた問題");
+  document.getElementById("r-close").onclick=closeQuiz;QZ.scrollTop=0}
+
+/* ===== 要点 ===== */
+function renderLearn(){
+  document.getElementById("v-learn").innerHTML=`<h2>要点まとめ（${GNAME[S.grade]}）</h2><p class="note" style="margin:0">テスト前はここを読んでから、今日のおすすめ問題で確認しよう。</p>`+
+  GROUPS.map(G=>{const ls=LESSONS.filter(l=>l.g===G.k&&(!S.grade||l.gr.indexOf(S.grade)>=0));if(!ls.length)return "";
+    return `<div class="group-title"><span class="kan">${G.nm}</span></div>`+ls.map(l=>`<details class="lesson"><summary><span>${l.t}</span><span class="gchip">${l.gr.length===3?"中1〜3":l.gr.map(n=>"中"+n).join("・")}</span></summary><div class="body">${l.h}</div></details>`).join("")}).join("");
+}
+
+/* ===== 暗記カード ===== */
+let CS={deck:Object.keys(DECKS)[0],onlyNew:true,i:0,flip:false,order:[]};
+const deckCards=k=>DECKS[k].cards.filter(inG);
+function deckList(){let c=deckCards(CS.deck);if(CS.onlyNew){const u=c.filter(x=>!S.known[x.id]);if(u.length)c=u}return c}
+function resetDeck(){CS.order=shuffle(deckList());CS.i=0;CS.flip=false}
+function renderCards(){
+  const avail=Object.keys(DECKS).filter(k=>deckCards(k).length);
+  const box=document.getElementById("v-cards");
+  if(!avail.length){box.innerHTML=`<h2>暗記カード</h2><div class="sheet empty">この学年のカードはありません。</div>`;return}
+  if(avail.indexOf(CS.deck)<0){CS.deck=avail[0];CS.order=[]}
+  if(!CS.order.length)resetDeck();
+  const dc=deckCards(CS.deck),known=dc.filter(c=>S.known[c.id]).length,c=CS.order[CS.i];
+  box.innerHTML=`<h2>暗記カード（${GNAME[S.grade]}）</h2>
+  <div class="decks">${avail.map(k=>`<button class="deck" data-d="${k}" aria-pressed="${k===CS.deck}">${DECKS[k].nm}</button>`).join("")}</div>
+  <div class="toggle"><input type="checkbox" id="onlynew" ${CS.onlyNew?"checked":""}><label for="onlynew">覚えていないカードだけ</label><span style="margin-left:auto">覚えた ${known}/${dc.length}</span></div>
+  <div class="bar"><i style="width:${known/dc.length*100}%"></i></div>
+  ${c?`<div class="flash" id="flash" role="button" tabindex="0" aria-label="カードをめくる">
+    <div class="front${c.f.length>12?" long":""}">${c.f}</div>
+    ${CS.flip?`<div class="back">${c.b}</div>`:`<div class="hint">タップして答えを見る</div>`}
+  </div>
+  <div class="note" style="text-align:center">${CS.i+1} / ${CS.order.length}</div>
+  <div class="cardbtns"><button class="sub-btn again" id="c-again">まだ</button><button class="sub-btn good" id="c-good">覚えた</button></div>`:
+  `<div class="sheet empty">このデッキは全部覚えました。<br><button class="sub-btn" id="c-reset" style="margin-top:10px">覚えた記録を消して最初から</button></div>`}`;
+  Array.prototype.forEach.call(document.querySelectorAll(".deck"),b=>b.onclick=()=>{CS.deck=b.dataset.d;resetDeck();renderCards()});
+  document.getElementById("onlynew").onchange=e=>{CS.onlyNew=e.target.checked;resetDeck();renderCards()};
+  const f=document.getElementById("flash");
+  if(f){const flip=()=>{CS.flip=!CS.flip;renderCards()};f.onclick=flip;f.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flip()}};
+    const next=()=>{CS.i++;CS.flip=false;if(CS.i>=CS.order.length)resetDeck();renderCards()};
+    document.getElementById("c-good").onclick=()=>{S.known[c.id]=1;save();next()};
+    document.getElementById("c-again").onclick=()=>{delete S.known[c.id];save();CS.order.push(c);next()};}
+  const rs=document.getElementById("c-reset");if(rs)rs.onclick=()=>{dc.forEach(x=>{delete S.known[x.id]});save();resetDeck();renderCards()};
+}
+
+/* ===== 苦手・記録 ===== */
+let confirmReset=false;
+function renderWeak(){
+  const weak=QG().filter(isWeak).sort((a,b)=>S.srs[b.id].w-S.srs[a.id].w);
+  const t=today(),days=[];for(let k=6;k>=0;k--){const d=S.days[t-k]||{n:0,c:0};days.push({k:k,n:d.n,c:d.c})}
+  const max=Math.max.apply(null,[GOAL].concat(days.map(d=>d.n)));
+  const dn=["日","月","火","水","木","金","土"];
+  const bars=days.map((d,j)=>{const x=12+j*44,h=d.n/max*90,dt=new Date((t-d.k)*864e5);
+    return `<rect x="${x}" y="${110-h}" width="28" height="${h}" rx="4" fill="var(--kin)"/><rect x="${x}" y="${110-d.c/max*90}" width="28" height="${d.c/max*90}" rx="4" fill="var(--ai)"/>
+    <text x="${x+14}" y="128" text-anchor="middle" font-size="11" fill="var(--sub)">${dn[dt.getUTCDay()]}</text>${d.n?`<text x="${x+14}" y="${104-h}" text-anchor="middle" font-size="11" fill="var(--ink)">${d.n}</text>`:""}`}).join("");
+  const gy=110-GOAL/max*90;
+  let tn=0,tc=0;Object.keys(S.days).forEach(k=>{tn+=S.days[k].n;tc+=S.days[k].c});
+  const wl={};weak.forEach(q=>{const k=q.label;if(!wl[k])wl[k]={q:q,w:0};wl[k].w+=S.srs[q.id].w});
+  const wlist=Object.keys(wl).map(k=>wl[k]).sort((a,b)=>b.w-a.w);
+  document.getElementById("v-weak").innerHTML=`<h2>苦手・記録</h2>
+  <div class="sheet"><div class="eyebrow">この7日間（太い色＝解いた数・濃い色＝正解数）</div>
+   <svg viewBox="0 0 320 136" style="width:100%;height:auto;display:block;margin-top:6px" role="img" aria-label="7日間の学習量">
+   <line x1="6" x2="314" y1="${gy}" y2="${gy}" stroke="var(--line)" stroke-dasharray="4 4"/><text x="314" y="${gy-4}" text-anchor="end" font-size="10" fill="var(--sub)">目標${GOAL}</text>${bars}</svg>
+   <div class="note">これまでに ${tn}問 解いて正答率 ${tn?Math.round(tc/tn*100):0}%・連続 ${streak()}日</div></div>
+  <div class="sheet weak"><div class="eyebrow">苦手な問題（${wlist.length}）</div>
+   ${wlist.length?`<ul>${wlist.slice(0,40).map(x=>`<li><span>${esc(x.q.label)}</span><span class="w">×${x.w}</span></li>`).join("")}</ul>
+   <button class="big-btn" id="w-go" style="margin-top:12px">苦手を復習する（${Math.min(weak.length,15)}問）</button>`:`<div class="empty">まだ苦手な問題はありません。<br>間違えた問題がここにたまり、3回続けて正解すると消えます。</div>`}</div>
+  <div class="sheet"><div class="eyebrow">データ</div><p class="note">学習記録はこの端末のブラウザに保存されます。（アプリの版：${APP_VER}）</p>
+   <div class="confirm">${confirmReset?`<span>本当に全部消しますか？</span><button class="sub-btn" id="rs-yes" style="color:var(--ng)">消す</button><button class="sub-btn" id="rs-no">やめる</button>`:`<button class="sub-btn" id="rs">学習記録をリセット</button>`}</div></div>`;
+  const g=document.getElementById("w-go");if(g)g.onclick=()=>startQuiz(shuffle(weak).slice(0,15),"苦手の復習");
+  const r=document.getElementById("rs");if(r)r.onclick=()=>{confirmReset=true;renderWeak()};
+  const y=document.getElementById("rs-yes");if(y)y.onclick=()=>{S={srs:{},days:{},known:{},grade:S.grade};save();confirmReset=false;renderAll()};
+  const n=document.getElementById("rs-no");if(n)n.onclick=()=>{confirmReset=false;renderWeak()};
+}
+
+/* ===== ナビ ===== */
+let VIEW="home";
+function showView(v){VIEW=v;["home","learn","cards","weak"].forEach(k=>{document.getElementById("v-"+k).hidden=k!==v});
+  Array.prototype.forEach.call(document.querySelectorAll("nav.tabs button"),b=>b.setAttribute("aria-current",b.dataset.v===v?"page":"false"));
+  renderAll();try{window.scrollTo(0,0)}catch(e){}}
+function renderAll(){renderHome();if(VIEW==="learn")renderLearn();if(VIEW==="cards")renderCards();if(VIEW==="weak")renderWeak()}
+Array.prototype.forEach.call(document.querySelectorAll("nav.tabs button"),b=>b.onclick=()=>showView(b.dataset.v));
+function paintGrade(){Array.prototype.forEach.call(document.querySelectorAll(".grades button"),b=>b.setAttribute("aria-pressed",String(+b.dataset.g===S.grade)))}
+Array.prototype.forEach.call(document.querySelectorAll(".grades button"),b=>b.onclick=()=>{S.grade=+b.dataset.g;save();CS.order=[];paintGrade();renderAll()});
+paintGrade();renderLearn();renderAll();
+</script>
+</body>
+</html>
